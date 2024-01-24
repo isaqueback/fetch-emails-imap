@@ -1,0 +1,33 @@
+{
+  "name": "imap",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx ./src/main.ts",
+    "build": "tsup src --out-dir build",
+    "start": "node build/main.js",
+    "lint": "eslint ./ --ext .ts",
+    "lint:fix": "eslint ./ --ext .ts --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@rocketseat/eslint-config": "^2.1.0",
+    "@types/imapflow": "^1.0.17",
+    "@types/mailparser": "^3.4.4",
+    "@types/readline-sync": "^1.4.8",
+    "eslint": "^8.56.0",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "imapflow": "^1.0.148",
+    "mailparser": "^3.6.6",
+    "readline-sync": "^1.4.10"
+  }
+}
