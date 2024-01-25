@@ -3,7 +3,7 @@ import 'dotenv/config'
 
 export default {
   host: process.env.HOST as string,
-  port: 993,
+  port: parseInt(process.env.PORT as string),
   secure: true,
   auth: {
     user: process.env.USER as string,
