@@ -9,12 +9,12 @@ interface EmailType {
 }
 
 export class Emails {
-  private emails: EmailType[]
+  private _emails: EmailType[]
   private client: ImapFlow
 
   constructor() {
     this.client = new ImapFlow(mailConfig)
-    this.emails = []
+    this._emails = []
   }
 
   public async downloadEmails(
@@ -48,7 +48,7 @@ export class Emails {
               .toLocaleLowerCase()
               .includes(searchTerm.toLocaleLowerCase())
           ) {
-            this.emails.push(email)
+            this._emails.push(email)
           }
         }
       }
@@ -58,7 +58,7 @@ export class Emails {
     await this.client.logout()
   }
 
-  public getEmails() {
-    return this.emails
+  public get emails() {
+    return this._emails
   }
 }

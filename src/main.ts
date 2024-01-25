@@ -24,7 +24,7 @@ async function main() {
   const searchTerm = readlineSync.question('Enter your search term: ')
 
   await _emails.downloadEmails(filterField, searchTerm)
-  const emails = _emails.getEmails()
+  const { emails } = _emails
 
   console.log(emails)
 }
