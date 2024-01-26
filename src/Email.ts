@@ -104,7 +104,7 @@ export class Email {
       const formData = new URLSearchParams()
       formData.append('method', 'power_control')
       formData.append('api_id', apiId)
-      formData.append('serverId', String(serverId))
+      formData.append('server_id', String(serverId))
       formData.append('action', 'reboot')
 
       const config = {
