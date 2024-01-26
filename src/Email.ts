@@ -31,7 +31,6 @@ export class Email {
 
       // Set up 'exists' event listener, triggered when new emails arrive
       this.imapClient.on('exists', async () => {
-        console.log('New e-mail received!')
         const mailbox = this.imapClient.mailbox
 
         // Check if the mailbox object is defined and has an 'exists' property
@@ -44,6 +43,7 @@ export class Email {
 
           // Check if the message matches the criteria
           if (await this.isMatchingMessage(lastMessage)) {
+            console.log('New e-mail received!')
             // Delete the message
             await this.imapClient.messageDelete([lastMessage.uid], {
               uid: true,
