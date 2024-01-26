@@ -1,13 +1,14 @@
 import { ImapFlowOptions } from 'imapflow'
 import 'dotenv/config'
+import { env } from '@/env'
 
 export default {
-  host: process.env.HOST as string,
-  port: parseInt(process.env.PORT as string),
+  host: env.EMAIL_HOST,
+  port: env.EMAIL_PORT,
   secure: true,
   auth: {
-    user: process.env.USER as string,
-    pass: process.env.PASSWORD,
+    user: env.EMAIL_USER,
+    pass: env.EMAIL_PASSWORD,
   },
   logger: false,
 } as ImapFlowOptions
