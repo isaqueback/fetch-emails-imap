@@ -111,7 +111,7 @@ export class Email {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       } as AxiosRequestConfig
 
-      // Attemp to restart the server twice in case of failure
+      // Attempt to restart the server twice in case of failure
       for (let i = 0; i < 2; i++) {
         const response = await axios.post(
           `${apiUrl}/api.php#power_control`,
