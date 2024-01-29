@@ -1,11 +1,14 @@
-import { Email } from './Email'
-import mailConfig from './config/mail'
+import { ServerMonitoring } from './ServerMonitoring'
+import monitoringMailConfig from './config/monitoringMail'
 import worldStreamConfig from './config/worldStream'
 
 async function main() {
-  const email = new Email(mailConfig, worldStreamConfig)
+  const serverMonitoring = new ServerMonitoring(
+    monitoringMailConfig,
+    worldStreamConfig,
+  )
 
-  await email.monitorInbox()
+  await serverMonitoring.monitorInbox()
 }
 
 try {

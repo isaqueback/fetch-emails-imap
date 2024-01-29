@@ -3,12 +3,12 @@ import 'dotenv/config'
 import { env } from '@/env'
 
 export default {
-  host: env.EMAIL_HOST,
-  port: env.EMAIL_PORT,
+  host: env.MONITORING_EMAIL_HOST,
+  port: env.MONITORING_EMAIL_PORT,
   secure: true,
   auth: {
-    user: env.EMAIL_USER,
-    pass: env.EMAIL_PASSWORD,
+    user: env.MONITORING_EMAIL_USER,
+    pass: env.MONITORING_EMAIL_PASSWORD,
   },
   logger: false,
 } as ImapFlowOptions

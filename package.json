@@ -23,10 +23,12 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "@types/nodemailer": "^6.4.14",
     "axios": "^1.6.7",
     "dotenv": "^16.4.0",
     "imapflow": "^1.0.148",
     "mailparser": "^3.6.6",
+    "nodemailer": "^6.9.8",
     "zod": "^3.22.4"
   }
 }
