@@ -1,55 +1,22 @@
 import { simpleParser } from 'mailparser'
 import { FetchMessageObject, ImapFlow, ImapFlowOptions } from 'imapflow'
-import nodemailer from 'nodemailer'
 import { env } from './env'
-import { MailOptions } from 'nodemailer/lib/sendmail-transport'
-import axios, { AxiosRequestConfig } from 'axios'
+import { ServerActions } from './ServerActions'
 
-// Interface for IaaS provider configuration
-interface IaasProviderConfig {
-  apiUrl: string
-  apiId: string
-  serverId: number
+interface IsUselessMessageProps {
+  message: FetchMessageObject
+  data: { from?: string; subject?: string; body?: string }[]
 }
 
-// ServerMonitoring class to handle email monitoring and server actions
-export class ServerMonitoring {
+export class MailMonitor {
   private imapClient: ImapFlow
-  private iaasProviderConfig: IaasProviderConfig
+  private serverActions: ServerActions
   private lastCriticalEmailTime: number | null = null
 
-  constructor(imapConfig: ImapFlowOptions, iaasConfig: IaasProviderConfig) {
+  constructor(imapConfig: ImapFlowOptions, serverActions: ServerActions) {
     this.imapClient = new ImapFlow(imapConfig)
-    this.iaasProviderConfig = iaasConfig
+    this.serverActions = serverActions
     this.imapClient.on('error', (err) => console.error('IMAP error:', err))
-  }
-
-  // Sends an alert email using SMTP settings from environment variables
-  private async sendAlertEmail() {
-    const transporter = nodemailer.createTransport({
-      host: env.SMTP_HOST,
-      port: env.SMTP_PORT,
-      secure: false,
-      auth: {
-        user: env.SMTP_USER,
-        pass: env.SMTP_PASSWORD,
-      },
-    })
-
-    const alertEmailOptions = {
-      from: env.SMTP_USER,
-      to: [env.ALERT_RECIPIENT1, env.ALERT_RECIPIENT2].filter(
-        (recipient) => recipient !== undefined,
-      ),
-      subject: 'Alerta de Servidor - Gestix',
-      text: 'ALERTA: Servidor 185.132.133.67 não retornou status OK após estado CRÍTICO.',
-    } as MailOptions
-
-    try {
-      await transporter.sendMail(alertEmailOptions)
-    } catch (err) {
-      console.error('Error sending alert email:', err)
-    }
   }
 
   // Monitors the inbox for specific email patterns
@@ -67,19 +34,34 @@ export class ServerMonitoring {
           )
 
           if (await this.isCriticalServerMessage(lastMessage)) {
-            this.lastCriticalEmailTime = new Date().getTime()
-
             // Restart the server or other actions
-            await this.restartWorldStreamServer()
+            await this.serverActions.restartWorldStreamServer()
 
             setTimeout(
               async () => {
                 if (!(await this.checkForOkMessage())) {
-                  await this.sendAlertEmail()
+                  await this.serverActions.sendAlertEmail()
                 }
               },
-              1000 * 60 * 10,
-            ) // 10 min
+              1000 * 60, // 1 min
+            )
+          } else if (
+            await this.isUselessMessage({
+              message: lastMessage,
+              data: [
+                {
+                  from: 'someUseLessSender2@example.com',
+                  body: 'your useless message',
+                },
+                {
+                  from: 'someUseLessSender2@example.com',
+                  subject: 'Some subject',
+                  body: 'your useless message',
+                },
+              ],
+            })
+          ) {
+            await this.deleteMessage(lastMessage.uid)
           }
         }
       })
@@ -123,7 +105,7 @@ export class ServerMonitoring {
           email.from
             .toLowerCase()
             .includes(env.WORLD_STREAM_MONITORING_EMAIL.toLowerCase()) &&
-          email.body.toLowerCase().includes('185.132.133.67 is now in ok')
+          email.body.toLowerCase().includes('x is now in ok')
         ) {
           if (
             this.lastCriticalEmailTime &&
@@ -144,50 +126,53 @@ export class ServerMonitoring {
     const email = {
       from: parsedEmail.from?.text ?? '',
       body: parsedEmail.text ?? '',
+      date: parsedEmail.date,
     }
 
-    return (
+    const isCriticalServerMessage =
       email.from
         .toLowerCase()
         .includes(env.WORLD_STREAM_MONITORING_EMAIL.toLowerCase()) &&
-      email.body.toLowerCase().includes('185.132.133.67 is now in critical')
-    )
+      email.body.toLowerCase().includes('ip x is now in critical')
+
+    if (isCriticalServerMessage) {
+      this.lastCriticalEmailTime = email.date?.getTime() ?? null
+
+      return true
+    }
+
+    return false
   }
 
-  private async restartWorldStreamServer() {
+  private async isUselessMessage({ data, message }: IsUselessMessageProps) {
+    const parsedEmail = await simpleParser(message.source)
+
+    const email = {
+      from: parsedEmail.from?.text ?? '',
+      subject: parsedEmail.subject ?? '',
+      body: parsedEmail.text ?? '',
+    }
+
+    return data.some(({ from, subject, body }) => {
+      const fromMatch = from
+        ? email.from.toLowerCase().includes(from.toLowerCase())
+        : true
+      const bodyMatch = body
+        ? email.body.toLowerCase().includes(body.toLowerCase())
+        : true
+      const subjectMatch = subject
+        ? email.subject.toLowerCase().includes(subject.toLowerCase())
+        : true
+
+      return fromMatch && subjectMatch && bodyMatch
+    })
+  }
+
+  private async deleteMessage(uid: number) {
     try {
-      const { apiId, apiUrl, serverId } = this.iaasProviderConfig
-
-      // Prepare form data for the POST request
-      const formData = new URLSearchParams()
-      formData.append('method', 'power_control')
-      formData.append('api_id', apiId)
-      formData.append('server_id', String(serverId))
-      formData.append('action', 'reboot')
-
-      const config = {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      } as AxiosRequestConfig
-
-      // Attempt to restart the server twice in case of failure
-      for (let i = 0; i < 2; i++) {
-        const response = await axios.post(
-          `${apiUrl}/api.php#power_control`,
-          formData.toString(),
-          config,
-        )
-
-        // Check if the server restart was successful
-        if (response.data.StatusCode === '1') {
-          console.log('Server restart requested successfully')
-          break
-        } else {
-          if (i === 0) console.log('Failed to restart, trying again...')
-          else console.log('Failed to restart!')
-        }
-      }
+      await this.imapClient.messageDelete([uid], { uid: true })
     } catch (err) {
-      console.error('Error restarting server:', err)
+      console.error('Error deleting message:', err)
     }
   }
 }

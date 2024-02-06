@@ -1,11 +1,12 @@
-import { ServerMonitoring } from './ServerMonitoring'
+import { MailMonitor } from './MailMonitor'
+import { ServerActions } from './ServerActions'
 import monitoringMailConfig from './config/monitoringMail'
-import worldStreamConfig from './config/worldStream'
+import iaasConfig from './config/worldStream'
 
 async function main() {
-  const serverMonitoring = new ServerMonitoring(
+  const serverMonitoring = new MailMonitor(
     monitoringMailConfig,
-    worldStreamConfig,
+    new ServerActions(iaasConfig),
   )
 
   await serverMonitoring.monitorInbox()
